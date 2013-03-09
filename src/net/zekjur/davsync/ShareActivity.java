@@ -1,14 +1,12 @@
 package net.zekjur.davsync;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.app.Activity;
-import android.content.Intent;
 import android.util.Log;
 import android.view.Menu;
 
@@ -24,6 +22,7 @@ public class ShareActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_share);
+		finish();
 
 		Intent intent = getIntent();
 		String action = intent.getAction();
