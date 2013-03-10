@@ -34,7 +34,7 @@ following fields:
 * WebDAV URL: the full URL to your WebDAV server, including the trailing slash.
   Example:
 
-      http://my-dav-server.zekjur.net/pictures/
+      http://my-dav-server.example.com/pictures/
 
 * WebDAV username/password: It is strongly recommended to protect your WebDAV
   server with a username/password. DavSync supports basic authentication only.
@@ -55,3 +55,32 @@ For the following features, pull requests will be accepted:
   URL/username underneath the label (see comment in
   [SettingsActivity.java](https://github.com/mstap/android-davsync/blob/master/src/net/zekjur/davsync/SettingsActivity.java).
 * Add an option to resize images before uploading to save bandwidth.
+
+Example lighttpd setup
+======================
+
+In case you are not yet running a WebDAV server, simply `apt-get install
+lighttpd lighttpd-mod-webdav`, then add a virtual host definition like this
+one:
+
+
+    $HTTP["host"] == "webdav.example.com" {
+      server.document-root = "/home/michael/pictures/dav/"
+
+      webdav.activate = "enable"
+      webdav.is-readonly = "disable"
+      webdav.sqlite-db-name = "/var/run/lighttpd/lighttpd.webdav_lock.db"
+
+      auth.backend = "htpasswd"
+      auth.backend.htpasswd.userfile = "/home/michael/pictures/.htpasswd-dav"
+      auth.require = ("/" =>
+        (
+         "method" => "basic",
+         "realm" => "My WebDAV server",
+         "require" => "valid-user"
+        )
+      )
+    }
+
+Then, `chown www-data.www-data /home/michael/pictures/dav/` and you should be
+good to go. Use “cadaver” as a command line WebDAV client to verify your setup.
