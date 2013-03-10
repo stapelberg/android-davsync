@@ -11,6 +11,12 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 
+// XXX: I am aware of the fact that the EditTextPreferences don’t display a
+// meaningful summary. This seems to be possible, see
+// http://stackoverflow.com/questions/531427/how-do-i-display-the-current-value-of-an-android-preference-in-the-preference-su
+// However, I think it is overly complicated and I’m not motivated to test
+// this app on a tablet. Patches welcome.
+
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
  * handset devices, settings are presented as a single list. On tablets,
@@ -52,7 +58,7 @@ public class SettingsActivity extends PreferenceActivity {
 		// In the simplified UI, fragments are not used at all and we instead
 		// use the older PreferenceActivity APIs.
 
-		addPreferencesFromResource(R.xml.pref_dummy);
+		addPreferencesFromResource(R.xml.pref_general);
 		// Add 'data and sync' preferences, and a corresponding header.
 		PreferenceCategory fakeHeader = new PreferenceCategory(this);
 		fakeHeader.setTitle(R.string.pref_header_autosync);

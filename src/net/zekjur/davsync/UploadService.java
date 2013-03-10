@@ -20,6 +20,7 @@ import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
@@ -51,6 +52,16 @@ public class UploadService extends IntentService {
 		final Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
 		Log.d("davsyncs", "Uploading " + uri.toString());
 
+		SharedPreferences preferences = getSharedPreferences("net.zekjur.davsync_preferences", Context.MODE_PRIVATE);
+
+		String webdavUrl = preferences.getString("webdav_url", null);
+		String webdavUser = preferences.getString("webdav_user", null);
+		String webdavPassword = preferences.getString("webdav_password", null);
+		if (webdavUrl == null) {
+			Log.d("davsyncs", "No WebDAV URL set up.");
+			return;
+		}
+
 		ContentResolver cr = getContentResolver();
 
 		String filename = this.filenameFromUri(uri);
@@ -64,7 +75,7 @@ public class UploadService extends IntentService {
 		final NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 		mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
 
-		HttpPut httpPut = new HttpPut("http://dav.zekjur.net/d/" + filename);
+		HttpPut httpPut = new HttpPut(webdavUrl + filename);
 
 		ParcelFileDescriptor fd;
 		InputStream stream;
@@ -87,15 +98,18 @@ public class UploadService extends IntentService {
 		httpPut.setEntity(entity);
 
 		DefaultHttpClient httpClient = new DefaultHttpClient();
-		AuthScope authScope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT);
-		UsernamePasswordCredentials credentials = new UsernamePasswordCredentials("michael", "hh0bFP0S");
-		httpClient.getCredentialsProvider().setCredentials(authScope, credentials);
 
-		try {
-			httpPut.addHeader(new BasicScheme().authenticate(credentials, httpPut));
-		} catch (AuthenticationException e1) {
-			e1.printStackTrace();
-			return;
+		if (webdavUser != null && webdavPassword != null) {
+			AuthScope authScope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT);
+			UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(webdavUser, webdavPassword);
+			httpClient.getCredentialsProvider().setCredentials(authScope, credentials);
+
+			try {
+				httpPut.addHeader(new BasicScheme().authenticate(credentials, httpPut));
+			} catch (AuthenticationException e1) {
+				e1.printStackTrace();
+				return;
+			}
 		}
 
 		try {
@@ -124,6 +138,7 @@ public class UploadService extends IntentService {
 		// XXX: It would be good to provide an option to try again.
 		// (or try it again automatically?)
 		// XXX: possibly we should re-queue the images in the database
+		mBuilder.setContentTitle("Error uploading to WebDAV server");
 		mBuilder.setProgress(0, 0, false);
 		mBuilder.setOngoing(false);
 		mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
