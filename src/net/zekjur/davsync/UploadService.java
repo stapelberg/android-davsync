@@ -100,10 +100,15 @@ public class UploadService extends IntentService {
 
 		try {
 			HttpResponse response = httpClient.execute(httpPut);
-			if (response.getStatusLine().getStatusCode() == 201) {
-				// The file was uploaded, so we remove the ongoing notification
-				// and that’s it.
+			int status = response.getStatusLine().getStatusCode();
+			// 201 means the file was created, 200 means it was stored but
+			// already existed.
+			if (status == 201 || status == 200) {
+				// The file was uploaded, so we remove the ongoing notification,
+				// remove it from the queue and that’s it.
 				mNotificationManager.cancel(uri.toString(), 0);
+				DavSyncOpenHelper helper = new DavSyncOpenHelper(this);
+				helper.removeUriFromQueue(uri.toString());
 				return;
 			}
 			Log.d("davsyncs", "" + response.getStatusLine());
@@ -118,6 +123,7 @@ public class UploadService extends IntentService {
 
 		// XXX: It would be good to provide an option to try again.
 		// (or try it again automatically?)
+		// XXX: possibly we should re-queue the images in the database
 		mBuilder.setProgress(0, 0, false);
 		mBuilder.setOngoing(false);
 		mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
