@@ -16,7 +16,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-        <service android:name=".UploadService" />
+        <service android:name="net.zekjur.davsync.UploadService" />
 
         <activity
             android:name="net.zekjur.davsync.MainActivity"
@@ -43,18 +43,28 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name="NetworkReceiver" >
+        <receiver android:name="net.zekjur.davsync.NetworkReceiver" >
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".NewPictureReceiver" >
+        <receiver android:name="net.zekjur.davsync.NewPictureReceiver" >
             <intent-filter>
                 <action android:name="android.hardware.action.NEW_PICTURE" />
 
                 <data android:mimeType="image/*" />
             </intent-filter>
         </receiver>
+
+        <activity
+            android:name="net.zekjur.davsync.SettingsActivity"
+            android:label="@string/title_activity_settings" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

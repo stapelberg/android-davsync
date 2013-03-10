@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -27,12 +28,17 @@ public class NetworkReceiver extends BroadcastReceiver {
 			return;
 		}
 
-		if (!(ConnectivityManager.TYPE_WIFI == info.getType())) {
+		SharedPreferences preferences = context.getSharedPreferences("net.zekjur.davsync_preferences",
+				Context.MODE_PRIVATE);
+
+		boolean syncOnWifiOnly = preferences.getBoolean("auto_sync_on_wifi_only", true);
+
+		if (syncOnWifiOnly && !(ConnectivityManager.TYPE_WIFI == info.getType())) {
 			Log.d("davsync", "Not on WIFI, not doing anything.");
 			return;
 		}
 
-		Log.d("davsync", "Connected to WIFI, checking whether pictures need to be synced");
+		Log.d("davsync", "Checking whether pictures need to be synced");
 
 		// XXX: It doesn’t really feel right to do this blockingly in a
 		// BroadcastReceiver, but I was unable to find whether this is the right

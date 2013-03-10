@@ -3,6 +3,7 @@ package net.zekjur.davsync;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -16,6 +17,16 @@ public class NewPictureReceiver extends BroadcastReceiver {
 		if (!android.hardware.Camera.ACTION_NEW_PICTURE.equals(intent.getAction()))
 			return;
 
+		SharedPreferences preferences = context.getSharedPreferences("net.zekjur.davsync_preferences",
+				Context.MODE_PRIVATE);
+
+		if (!preferences.getBoolean("auto_sync_camera_pictures", true)) {
+			Log.d("davsync", "automatic camera sync is disabled, ignoring");
+			return;
+		}
+
+		boolean syncOnWifiOnly = preferences.getBoolean("auto_sync_on_wifi_only", true);
+
 		Log.d("davsync", "New picture was taken");
 		Uri uri = intent.getData();
 		Log.d("davsync", "picture uri = " + uri);
@@ -24,11 +35,10 @@ public class NewPictureReceiver extends BroadcastReceiver {
 		NetworkInfo info = cs.getActiveNetworkInfo();
 
 		// If we have WIFI connectivity, upload immediately
-		if (info.isConnected() && (ConnectivityManager.TYPE_WIFI == info.getType())) {
+		boolean isWifi = info.isConnected() && (ConnectivityManager.TYPE_WIFI == info.getType());
+		if (!syncOnWifiOnly || isWifi) {
 			Log.d("davsync", "Trying to upload " + uri + " immediately (on WIFI)");
 			Intent ulIntent = new Intent(context, UploadService.class);
-			// evtl: mapintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
 			ulIntent.putExtra(Intent.EXTRA_STREAM, uri);
 			context.startService(ulIntent);
 		} else {
