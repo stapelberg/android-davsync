@@ -28,8 +28,10 @@ it doesn’t fit into my vision of what the app should do.
 Installation and configuration
 ==============================
 
-Install the APK. Then, chose “DavSync” in your application drawer. Set up the
-following fields:
+Install [DavSync from Google
+play](https://play.google.com/store/apps/details?id=net.zekjur.davsync) or
+compile it yourself. Then, chose “DavSync” in your application drawer. Set up
+the following fields:
 
 * WebDAV URL: the full URL to your WebDAV server, including the trailing slash.
   Example:
