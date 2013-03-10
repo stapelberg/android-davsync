@@ -51,12 +51,15 @@ For the following features, pull requests will be accepted:
 * Implement SSL certificate pinning. Instead of trusting certificate
   hierarchies, allow the user to pin a specific certificate by fingerprint, no
   matter whether it is self-signed or not.
+* Better error handling: Currently, it is not possible to retry/schedule a
+  retry when uploading a file fails.
 * Enhance the Preferences activity to allow configuration of multiple WebDAV
   servers, add a popup dialog with server selection in the ShareActivity.
 * Beautify the Preferences activity to show the current values of WebDAV
   URL/username underneath the label (see comment in
   [SettingsActivity.java](https://github.com/mstap/android-davsync/blob/master/src/net/zekjur/davsync/SettingsActivity.java).
 * Add an option to resize images before uploading to save bandwidth.
+* A better icon would be great.
 
 Example lighttpd setup
 ======================
