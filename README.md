@@ -1,6 +1,8 @@
 DavSync (or net.zekjur.davsync to be specific)
 ==============================================
 
+<img src="https://github.com/mstap/android-davsync/raw/master//screenshots/davsync-2013-03-10-200731.png" width="240" align="right" alt="DavSync screenshot">
+
 After installing this Android App, you can share images from your gallery to
 your WebDAV server. Furthermore, every picture you take with the camera will
 automatically be uploaded to your WebDAV server — unless you turn that off, of
@@ -11,8 +13,6 @@ to privacy concerns or other reasons, you still might want to backup/archive
 every picture you take. Also, if you run a WebDAV server on your workstation,
 automatically synchronizing your pictures is much better than having to import
 them manually with gphoto or other programs.
-
-![DavSync screenshot](/screenshots/davsync-2013-03-10-200731.png "DavSync screenshot")
 
 Project status and contributions
 ================================
