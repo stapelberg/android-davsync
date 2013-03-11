@@ -70,6 +70,8 @@ one:
 
     server.modules = (
       # …
+      "
+      "mod_auth",
       "mod_webdav",
     )
 
