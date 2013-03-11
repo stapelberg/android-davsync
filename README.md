@@ -68,6 +68,10 @@ In case you are not yet running a WebDAV server, simply `apt-get install
 lighttpd lighttpd-mod-webdav`, then add a virtual host definition like this
 one:
 
+    server.modules = (
+      # …
+      "mod_webdav",
+    )
 
     $HTTP["host"] == "webdav.example.com" {
       server.document-root = "/home/michael/pictures/dav/"
