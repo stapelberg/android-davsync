@@ -41,6 +41,8 @@ public class UploadService extends IntentService {
 	private String filenameFromUri(Uri uri) {
 		String[] projection = { MediaStore.Images.Media.DATA };
 		Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+		if (cursor == null)
+			return null;
 		int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
 		cursor.moveToFirst();
 		Uri filePathUri = Uri.parse(cursor.getString(column_index));
@@ -65,6 +67,10 @@ public class UploadService extends IntentService {
 		ContentResolver cr = getContentResolver();
 
 		String filename = this.filenameFromUri(uri);
+		if (filename == null) {
+			Log.d("davsyncs", "filenameFromUri returned null");
+			return;
+		}
 
 		final Builder mBuilder = new NotificationCompat.Builder(this);
 		mBuilder.setContentTitle("Uploading to WebDAV server");
@@ -89,6 +95,7 @@ public class UploadService extends IntentService {
 
 		CountingInputStreamEntity entity = new CountingInputStreamEntity(stream, fd.getStatSize());
 		entity.setUploadListener(new UploadListener() {
+			@Override
 			public void onChange(int percent) {
 				mBuilder.setProgress(100, percent, false);
 				mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
