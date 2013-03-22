@@ -23,7 +23,7 @@ public class NetworkReceiver extends BroadcastReceiver {
 		ConnectivityManager cs = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
 		NetworkInfo info = cs.getActiveNetworkInfo();
-		if (!info.isConnected()) {
+		if (info == null || !info.isConnected()) {
 			Log.d("davsync", "_NOT_ connected anymore, not doing anything.");
 			return;
 		}
