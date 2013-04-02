@@ -25,8 +25,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationCompat.Builder;
+import android.app.Notification;
+import android.app.Notification.Builder;
 import android.util.Log;
 
 public class UploadService extends IntentService {
@@ -72,7 +72,7 @@ public class UploadService extends IntentService {
 			return;
 		}
 
-		final Builder mBuilder = new NotificationCompat.Builder(this);
+		final Builder mBuilder = new Notification.Builder(this);
 		mBuilder.setContentTitle("Uploading to WebDAV server");
 		mBuilder.setContentText(filename);
 		mBuilder.setSmallIcon(android.R.drawable.ic_menu_upload);
