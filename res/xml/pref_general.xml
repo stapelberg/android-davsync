@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <EditTextPreference android:title="WebDAV URL" android:key="webdav_url" android:inputType="textUri" />
+    <EditTextPreference android:title="WebDAV URL" android:key="webdav_url" android:inputType="textUri" android:defaultValue="http://www.example.com/webdav/"/>
     <EditTextPreference android:title="WebDAV Username" android:key="webdav_user" android:inputType="textNoSuggestions"/>
     <EditTextPreference android:title="WebDAV password" android:key="webdav_password" android:inputType="textWebPassword"/>
     
-
+    <!--
+         Enables/disables child preferences (below)
+         when checked/unchecked.
+    -->
+    <PreferenceCategory android:title="Automatic upload" >
+	    <CheckBoxPreference
+	        android:defaultValue="true"
+	        android:key="auto_sync_camera_pictures"
+	        android:title="@string/pref_title_auto_sync_camera_pictures" />
+	    <CheckBoxPreference
+	        android:defaultValue="true"
+	        android:dependency="auto_sync_camera_pictures"
+	        android:key="auto_sync_on_wifi_only"
+	        android:title="@string/pref_title_auto_sync_on_wifi_only" />
+    </PreferenceCategory>
 </PreferenceScreen>
