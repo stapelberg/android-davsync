@@ -16,6 +16,8 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.app.IntentService;
+import android.app.Notification;
+import android.app.Notification.Builder;
 import android.app.NotificationManager;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -25,8 +27,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationCompat.Builder;
 import android.util.Log;
 
 public class UploadService extends IntentService {
@@ -49,6 +49,12 @@ public class UploadService extends IntentService {
 		return filePathUri.getLastPathSegment().toString();
 	}
 
+	/*
+	 * With Notification.Builder.getNotification() we use a deprecated method
+	 * to also support Android 4.0 Devices (API v14).
+	 * The non-deprecated Notification.Builder.build() method was added in API v16.
+	 */
+	@SuppressWarnings("deprecation")
 	@Override
 	protected void onHandleIntent(Intent intent) {
 		final Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
@@ -72,14 +78,14 @@ public class UploadService extends IntentService {
 			return;
 		}
 
-		final Builder mBuilder = new NotificationCompat.Builder(this);
+		final Builder mBuilder = new Notification.Builder(this);
 		mBuilder.setContentTitle("Uploading to WebDAV server");
 		mBuilder.setContentText(filename);
 		mBuilder.setSmallIcon(android.R.drawable.ic_menu_upload);
 		mBuilder.setOngoing(true);
 		mBuilder.setProgress(100, 30, false);
 		final NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
+		mNotificationManager.notify(uri.toString(), 0, mBuilder.getNotification());
 
 		HttpPut httpPut = new HttpPut(webdavUrl + filename);
 
@@ -98,7 +104,7 @@ public class UploadService extends IntentService {
 			@Override
 			public void onChange(int percent) {
 				mBuilder.setProgress(100, percent, false);
-				mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
+				mNotificationManager.notify(uri.toString(), 0, mBuilder.getNotification());
 			}
 		});
 
@@ -148,6 +154,6 @@ public class UploadService extends IntentService {
 		mBuilder.setContentTitle("Error uploading to WebDAV server");
 		mBuilder.setProgress(0, 0, false);
 		mBuilder.setOngoing(false);
-		mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
+		mNotificationManager.notify(uri.toString(), 0, mBuilder.getNotification());
 	}
 }
