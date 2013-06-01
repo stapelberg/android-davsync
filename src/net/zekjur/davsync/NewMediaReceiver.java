@@ -9,7 +9,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.util.Log;
 
-public class NewPictureReceiver extends BroadcastReceiver {
+public class NewMediaReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
