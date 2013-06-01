@@ -13,15 +13,23 @@ public class NewPictureReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		Log.d("davsync", "received pic intent");
-		if (!android.hardware.Camera.ACTION_NEW_PICTURE.equals(intent.getAction()))
-			return;
+		Log.d("davsync", "received pic or video intent");
+
+		boolean isNewPic = android.hardware.Camera.ACTION_NEW_PICTURE.equals(intent.getAction());
+		boolean isNewVid = android.hardware.Camera.ACTION_NEW_VIDEO.equals(intent.getAction()); 
+
+		if (!isNewPic && !isNewVid) return;
 
 		SharedPreferences preferences = context.getSharedPreferences("net.zekjur.davsync_preferences",
 				Context.MODE_PRIVATE);
 
-		if (!preferences.getBoolean("auto_sync_camera_pictures", true)) {
-			Log.d("davsync", "automatic camera sync is disabled, ignoring");
+		if (isNewPic && !preferences.getBoolean("auto_sync_camera_pictures", true)) {
+			Log.d("davsync", "automatic camera picture sync is disabled, ignoring");
+			return;
+		}
+
+		if (isNewVid && !preferences.getBoolean("auto_sync_camera_videos", true)) {
+			Log.d("davsync", "automatic camera video sync is disabled, ignoring");
 			return;
 		}
 

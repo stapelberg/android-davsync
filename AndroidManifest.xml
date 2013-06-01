@@ -53,8 +53,10 @@
         <receiver android:name="net.zekjur.davsync.NewPictureReceiver" >
             <intent-filter>
                 <action android:name="android.hardware.action.NEW_PICTURE" />
+                <action android:name="android.hardware.action.NEW_VIDEO" />
 
                 <data android:mimeType="image/*" />
+                <data android:mimeType="video/*" />
             </intent-filter>
         </receiver>
 
