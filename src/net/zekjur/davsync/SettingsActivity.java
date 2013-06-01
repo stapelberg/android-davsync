@@ -61,9 +61,13 @@ public class SettingsActivity extends PreferenceActivity {
 		addPreferencesFromResource(R.xml.pref_general);
 		// Add 'data and sync' preferences, and a corresponding header.
 		PreferenceCategory fakeHeader = new PreferenceCategory(this);
-		fakeHeader.setTitle(R.string.pref_header_autosync);
+		fakeHeader.setTitle(R.string.pref_header_autosync_pictures);
 		getPreferenceScreen().addPreference(fakeHeader);
-		addPreferencesFromResource(R.xml.pref_autosync);
+		addPreferencesFromResource(R.xml.pref_autosync_pictures);
+		fakeHeader = new PreferenceCategory(this);
+		fakeHeader.setTitle(R.string.pref_header_autosync_videos);
+		getPreferenceScreen().addPreference(fakeHeader);
+		addPreferencesFromResource(R.xml.pref_autosync_videos);
 	}
 
 	/** {@inheritDoc} */
@@ -109,7 +113,7 @@ public class SettingsActivity extends PreferenceActivity {
 		@Override
 		public void onCreate(Bundle savedInstanceState) {
 			super.onCreate(savedInstanceState);
-			addPreferencesFromResource(R.xml.pref_autosync);
+			addPreferencesFromResource(R.xml.pref_autosync_pictures);
 		}
 	}
 

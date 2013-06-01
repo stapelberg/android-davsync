@@ -48,11 +48,16 @@
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
-        <receiver android:name="net.zekjur.davsync.NewPictureReceiver" >
+        <receiver android:name="net.zekjur.davsync.NewMediaReceiver" >
             <intent-filter>
                 <action android:name="android.hardware.action.NEW_PICTURE" />
 
                 <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.hardware.action.NEW_VIDEO" />
+
+                <data android:mimeType="video/*" />
             </intent-filter>
         </receiver>
 
