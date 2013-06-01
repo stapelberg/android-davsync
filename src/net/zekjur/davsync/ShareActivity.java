@@ -15,7 +15,7 @@ public class ShareActivity extends Activity {
 	/*
 	 * Takes one or multiple images (see AndroidManifest.xml) and calls
 	 * shareImageWithUri() on each one.
-	 * 
+	 *
 	 * @see android.app.Activity#onCreate(android.os.Bundle)
 	 */
 	@Override
