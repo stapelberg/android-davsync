@@ -2,6 +2,6 @@
 
     <header
         android:fragment="net.zekjur.davsync.SettingsActivity$AutoSyncPreferenceFragment"
-        android:title="@string/pref_header_autosync" />
+        android:title="@string/pref_header_autosync_pictures" />
 
 </preference-headers>

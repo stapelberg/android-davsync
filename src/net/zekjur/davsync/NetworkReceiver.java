@@ -31,21 +31,30 @@ public class NetworkReceiver extends BroadcastReceiver {
 		SharedPreferences preferences = context.getSharedPreferences("net.zekjur.davsync_preferences",
 				Context.MODE_PRIVATE);
 
-		boolean syncOnWifiOnly = preferences.getBoolean("auto_sync_on_wifi_only", true);
+		boolean syncPicturesOnWifiOnly = preferences.getBoolean("auto_sync_pictures_on_wifi_only", true);
+		boolean syncVideosOnWifiOnly = preferences.getBoolean("auto_sync_videos_on_wifi_only", true);
 
-		if (syncOnWifiOnly && !(ConnectivityManager.TYPE_WIFI == info.getType())) {
+		if ((syncPicturesOnWifiOnly || syncVideosOnWifiOnly) && !(ConnectivityManager.TYPE_WIFI == info.getType())) {
 			Log.d("davsync", "Not on WIFI, not doing anything.");
 			return;
 		}
 
-		Log.d("davsync", "Checking whether pictures need to be synced");
+		Log.d("davsync", "Checking whether pictures/videos need to be synced");
 
 		// XXX: It doesn’t really feel right to do this blockingly in a
 		// BroadcastReceiver, but I was unable to find whether this is the right
 		// way or whether there is a better one.
+		
+		ArrayList<MediaType> mediaTypes = new ArrayList<MediaType>();
+		if (syncPicturesOnWifiOnly) {
+			mediaTypes.add(MediaType.PICTURE);
+		}
+		if (syncVideosOnWifiOnly) {
+			mediaTypes.add(MediaType.VIDEO);
+		}
 
 		DavSyncOpenHelper helper = new DavSyncOpenHelper(context);
-		ArrayList<String> uris = helper.getQueuedUris();
+		ArrayList<String> uris = helper.getQueuedUris(mediaTypes);
 		for (String uri : uris) {
 			Intent ulIntent = new Intent(context, UploadService.class);
 			// evtl: mapintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

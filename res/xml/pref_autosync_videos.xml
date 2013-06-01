@@ -6,12 +6,12 @@
     -->
     <CheckBoxPreference
         android:defaultValue="true"
-        android:key="auto_sync_camera_pictures"
-        android:title="@string/pref_title_auto_sync_camera_pictures" />
+        android:key="auto_sync_camera_videos"
+        android:title="@string/pref_title_auto_sync_camera_videos" />
     <CheckBoxPreference
         android:defaultValue="true"
-        android:dependency="auto_sync_camera_pictures"
-        android:key="auto_sync_on_wifi_only"
+        android:dependency="auto_sync_camera_videos"
+        android:key="auto_sync_videos_on_wifi_only"
         android:title="@string/pref_title_auto_sync_on_wifi_only" />
-
+    
 </PreferenceScreen>
