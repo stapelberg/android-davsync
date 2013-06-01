@@ -1,9 +1,5 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
-    <!--
-         A 'parent' preference, which enables/disables child preferences (below)
-         when checked/unchecked.
-    -->
     <CheckBoxPreference
         android:defaultValue="true"
         android:key="auto_sync_camera_pictures"
