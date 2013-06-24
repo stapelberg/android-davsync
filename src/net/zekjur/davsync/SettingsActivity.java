@@ -4,9 +4,13 @@ import java.util.List;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
@@ -28,7 +32,7 @@ import android.preference.PreferenceFragment;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
-public class SettingsActivity extends PreferenceActivity {
+public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
 	/**
 	 * Determines whether to always show the simplified settings UI, where
 	 * settings are presented in a single list. When false, settings are shown
@@ -36,12 +40,59 @@ public class SettingsActivity extends PreferenceActivity {
 	 * shown on tablets.
 	 */
 	private static final boolean ALWAYS_SIMPLE_PREFS = false;
+	
+	private EditTextPreference webdavUrlPreference;
+	private EditTextPreference webdavUserPreference;
+	private EditTextPreference webdavPwdPreference;
 
 	@Override
 	protected void onPostCreate(Bundle savedInstanceState) {
 		super.onPostCreate(savedInstanceState);
 
 		setupSimplePreferencesScreen();
+		
+		webdavUrlPreference = (EditTextPreference) getPreferenceScreen().findPreference("webdav_url");
+		webdavUserPreference = (EditTextPreference) getPreferenceScreen().findPreference("webdav_user");
+		webdavPwdPreference = (EditTextPreference) getPreferenceScreen().findPreference("webdav_password");
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		
+		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		webdavUrlPreference.setSummary(sharedPreferences.getString("webdav_url", ""));
+		webdavUserPreference.setSummary(sharedPreferences.getString("webdav_user", ""));
+		if (sharedPreferences.getString("webdav_password", "").equals("")) {
+			webdavPwdPreference.setSummary("");
+		} else {
+			webdavPwdPreference.setSummary("****");
+		}
+		
+		getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);	
+	}
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+		if (key.equals("webdav_url")) {
+			webdavUrlPreference.setSummary(sharedPreferences.getString("webdav_url", ""));
+		} else if (key.equals("webdav_user")) {
+			webdavUserPreference.setSummary(sharedPreferences.getString("webdav_user", ""));
+		}
+		else if (key.equals("webdav_password")) {
+			if (sharedPreferences.getString("webdav_password", "").equals("")) {
+				webdavPwdPreference.setSummary("");
+			} else {
+				webdavPwdPreference.setSummary("****");
+			}
+		}
 	}
 
 	/**
