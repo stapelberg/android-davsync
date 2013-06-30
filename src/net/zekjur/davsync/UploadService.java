@@ -27,6 +27,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.Builder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 public class UploadService extends IntentService {
@@ -51,7 +52,17 @@ public class UploadService extends IntentService {
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		final Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+		DavSyncOpenHelper helper = new DavSyncOpenHelper(this);
+
+		String strUri = helper.getNextUri();
+		if(strUri == null) {
+			Log.d("davsyncs", "Upload queue is empty");
+			return;
+		}
+		
+		helper.setUploading(strUri, 0);
+		
+		final Uri uri = (Uri) Uri.parse(strUri);
 		Log.d("davsyncs", "Uploading " + uri.toString());
 
 		SharedPreferences preferences = getSharedPreferences("net.zekjur.davsync_preferences", Context.MODE_PRIVATE);
@@ -69,6 +80,9 @@ public class UploadService extends IntentService {
 		String filename = this.filenameFromUri(uri);
 		if (filename == null) {
 			Log.d("davsyncs", "filenameFromUri returned null");
+
+			Intent ulIntent = new Intent(this, UploadService.class);
+			startService(ulIntent);
 			return;
 		}
 
@@ -90,6 +104,9 @@ public class UploadService extends IntentService {
 			stream = cr.openInputStream(uri);
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
+
+			Intent ulIntent = new Intent(this, UploadService.class);
+			startService(ulIntent);
 			return;
 		}
 
@@ -115,6 +132,9 @@ public class UploadService extends IntentService {
 				httpPut.addHeader(new BasicScheme().authenticate(credentials, httpPut));
 			} catch (AuthenticationException e1) {
 				e1.printStackTrace();
+
+				Intent ulIntent = new Intent(this, UploadService.class);
+				startService(ulIntent);
 				return;
 			}
 		}
@@ -128,8 +148,14 @@ public class UploadService extends IntentService {
 				// The file was uploaded, so we remove the ongoing notification,
 				// remove it from the queue and that’s it.
 				mNotificationManager.cancel(uri.toString(), 0);
-				DavSyncOpenHelper helper = new DavSyncOpenHelper(this);
 				helper.removeUriFromQueue(uri.toString());
+
+				Intent lbIntent = new Intent(PendingUploadsActivity.LOCAL_BROADCAST_ACTION);
+				lbIntent.putExtra(PendingUploadsActivity.LOCAL_BROADCAST_MESSAGE, uri.toString());
+				LocalBroadcastManager.getInstance(this).sendBroadcast(lbIntent);
+				
+				Intent ulIntent = new Intent(this, UploadService.class);
+				startService(ulIntent);
 				return;
 			}
 			Log.d("davsyncs", "" + response.getStatusLine());
@@ -142,12 +168,12 @@ public class UploadService extends IntentService {
 			mBuilder.setContentText(filename + ": " + e.getLocalizedMessage());
 		}
 
-		// XXX: It would be good to provide an option to try again.
-		// (or try it again automatically?)
-		// XXX: possibly we should re-queue the images in the database
 		mBuilder.setContentTitle("Error uploading to WebDAV server");
 		mBuilder.setProgress(0, 0, false);
 		mBuilder.setOngoing(false);
 		mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
+		
+		Intent ulIntent = new Intent(this, UploadService.class);
+		startService(ulIntent);
 	}
 }

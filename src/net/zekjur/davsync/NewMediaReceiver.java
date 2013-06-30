@@ -39,9 +39,14 @@ public class NewMediaReceiver extends BroadcastReceiver {
 		Uri uri = intent.getData();
 		Log.d("davsync", "picture uri = " + uri);
 
+		DavSyncOpenHelper helper = new DavSyncOpenHelper(context);
+
 		ConnectivityManager cs = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo info = cs.getActiveNetworkInfo();
 		if (info == null) {
+			Log.d("davsync", "Queueing " + uri + "for later (no active network info)");
+			// otherwise, queue the image for later
+			helper.queueUri(uri);
 			return;
 		}
 
@@ -49,13 +54,12 @@ public class NewMediaReceiver extends BroadcastReceiver {
 		boolean isWifi = info.isConnected() && (ConnectivityManager.TYPE_WIFI == info.getType());
 		if (!syncOnWifiOnly || isWifi) {
 			Log.d("davsync", "Trying to upload " + uri + " immediately (on WIFI)");
+			helper.queueUri(uri);
 			Intent ulIntent = new Intent(context, UploadService.class);
-			ulIntent.putExtra(Intent.EXTRA_STREAM, uri);
 			context.startService(ulIntent);
 		} else {
 			Log.d("davsync", "Queueing " + uri + "for later (not on WIFI)");
 			// otherwise, queue the image for later
-			DavSyncOpenHelper helper = new DavSyncOpenHelper(context);
 			helper.queueUri(uri);
 		}
 	}

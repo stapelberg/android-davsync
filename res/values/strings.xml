@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <string name="empty"></string>
+    <string name="dummy">dummy</string>
+    
     <string name="app_name">DavSync</string>
-    <string name="action_settings">DavSync Settings</string>
     <string name="hello_world">Hello world!</string>
     <string name="title_activity_share">Share via DavSync</string>
 
