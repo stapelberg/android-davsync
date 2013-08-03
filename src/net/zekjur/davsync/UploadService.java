@@ -122,9 +122,9 @@ public class UploadService extends IntentService {
 		try {
 			HttpResponse response = httpClient.execute(httpPut);
 			int status = response.getStatusLine().getStatusCode();
-			// 201 means the file was created, 200 means it was stored but
-			// already existed.
-			if (status == 201 || status == 200) {
+			// 201 means the file was created.
+			// 200 and 204 mean it was stored but already existed.
+			if (status == 201 || status == 200 || status == 204) {
 				// The file was uploaded, so we remove the ongoing notification,
 				// remove it from the queue and that’s it.
 				mNotificationManager.cancel(uri.toString(), 0);
