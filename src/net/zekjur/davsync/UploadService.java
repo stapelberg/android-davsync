@@ -41,7 +41,7 @@ public class UploadService extends IntentService {
 	private String filenameFromUri(Uri uri) {
 		String[] projection = { MediaStore.Images.Media.DATA };
 		Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
-		if (cursor == null)
+		if (cursor == null || cursor.getCount() == 0)
 			return null;
 		int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
 		cursor.moveToFirst();
