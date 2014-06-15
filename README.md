@@ -55,11 +55,7 @@ For the following features, pull requests will be accepted:
   retry when uploading a file fails.
 * Enhance the Preferences activity to allow configuration of multiple WebDAV
   servers, add a popup dialog with server selection in the ShareActivity.
-* Beautify the Preferences activity to show the current values of WebDAV
-  URL/username underneath the label (see comment in
-  [SettingsActivity.java](https://github.com/mstap/android-davsync/blob/master/src/net/zekjur/davsync/SettingsActivity.java).
 * Add an option to resize images before uploading to save bandwidth.
-* A better icon would be great.
 
 Example lighttpd setup
 ======================
