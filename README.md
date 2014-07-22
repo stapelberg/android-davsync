@@ -1,7 +1,7 @@
 DavSync (or net.zekjur.davsync to be specific)
 ==============================================
 
-<img src="https://github.com/mstap/android-davsync/raw/master//screenshots/davsync-2013-03-10-200731.png" width="240" align="right" alt="DavSync screenshot">
+<img src="https://github.com/stapelberg/android-davsync/raw/master/screenshots/davsync-2013-03-10-200731.png" width="240" align="right" alt="DavSync screenshot">
 
 After installing this Android App, you can share images from your gallery to
 your WebDAV server. Furthermore, every picture you take with the camera will
@@ -55,11 +55,7 @@ For the following features, pull requests will be accepted:
   retry when uploading a file fails.
 * Enhance the Preferences activity to allow configuration of multiple WebDAV
   servers, add a popup dialog with server selection in the ShareActivity.
-* Beautify the Preferences activity to show the current values of WebDAV
-  URL/username underneath the label (see comment in
-  [SettingsActivity.java](https://github.com/mstap/android-davsync/blob/master/src/net/zekjur/davsync/SettingsActivity.java).
 * Add an option to resize images before uploading to save bandwidth.
-* A better icon would be great.
 
 Example lighttpd setup
 ======================
