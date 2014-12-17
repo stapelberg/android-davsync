@@ -9,6 +9,7 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -44,6 +45,10 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	private EditTextPreference webdavUrlPreference;
 	private EditTextPreference webdavUserPreference;
 	private EditTextPreference webdavPwdPreference;
+	
+	private CheckBoxPreference autoSyncCameraPictures;
+	private CheckBoxPreference autoSyncCameraVideos;
+	private CheckBoxPreference autoSyncOnWifiOnly;
 
 	@Override
 	protected void onPostCreate(Bundle savedInstanceState) {
@@ -54,6 +59,10 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		webdavUrlPreference = (EditTextPreference) getPreferenceScreen().findPreference("webdav_url");
 		webdavUserPreference = (EditTextPreference) getPreferenceScreen().findPreference("webdav_user");
 		webdavPwdPreference = (EditTextPreference) getPreferenceScreen().findPreference("webdav_password");
+		
+		autoSyncCameraPictures = (CheckBoxPreference) getPreferenceScreen().findPreference("auto_sync_camera_pictures");
+		autoSyncCameraVideos = (CheckBoxPreference) getPreferenceScreen().findPreference("auto_sync_camera_videos");
+		autoSyncOnWifiOnly = (CheckBoxPreference) getPreferenceScreen().findPreference("auto_sync_on_wifi_only");
 	}
 
 	@Override
@@ -68,7 +77,20 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 		super.onResume();
 		
 		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
+		
 		webdavUrlPreference.setSummary(sharedPreferences.getString("webdav_url", ""));
+		if (sharedPreferences.getString("webdav_url", "").equals(""))
+		{
+			setEnabledAutoSyncOptions(false);
+			
+			autoSyncCameraPictures.setChecked(false);
+			autoSyncCameraVideos.setChecked(false);
+			autoSyncOnWifiOnly.setChecked(false);
+		}
+		else
+		{
+			setEnabledAutoSyncOptions(true);
+		}
 		webdavUserPreference.setSummary(sharedPreferences.getString("webdav_user", ""));
 		if (sharedPreferences.getString("webdav_password", "").equals("")) {
 			webdavPwdPreference.setSummary("");
@@ -82,8 +104,21 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		if (key.equals("webdav_url")) {
+			if (sharedPreferences.getString("webdav_url", "").equals(""))
+			{
+				setEnabledAutoSyncOptions(false);
+				
+				autoSyncCameraPictures.setChecked(false);
+				autoSyncCameraVideos.setChecked(false);
+				autoSyncOnWifiOnly.setChecked(false);
+			}
+			else
+			{
+				setEnabledAutoSyncOptions(true);
+			}
 			webdavUrlPreference.setSummary(sharedPreferences.getString("webdav_url", ""));
-		} else if (key.equals("webdav_user")) {
+		} 
+		else if (key.equals("webdav_user")) {
 			webdavUserPreference.setSummary(sharedPreferences.getString("webdav_user", ""));
 		}
 		else if (key.equals("webdav_password")) {
@@ -93,6 +128,20 @@ public class SettingsActivity extends PreferenceActivity implements OnSharedPref
 				webdavPwdPreference.setSummary("****");
 			}
 		}
+	}
+	
+	public void setEnabledWebdavOptions(boolean enabled)
+	{
+		webdavUrlPreference.setEnabled(enabled);
+		webdavUserPreference.setEnabled(enabled);
+		webdavPwdPreference.setEnabled(enabled);
+	}
+	
+	public void setEnabledAutoSyncOptions(boolean enabled)
+	{
+		autoSyncCameraPictures.setEnabled(enabled);
+		autoSyncCameraVideos.setEnabled(enabled);
+		autoSyncOnWifiOnly.setEnabled(enabled);
 	}
 
 	/**

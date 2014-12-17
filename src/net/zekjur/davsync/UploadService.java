@@ -7,13 +7,15 @@ import net.maxters.android.ntlm.NTLM;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthenticationException;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpPut;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.app.IntentService;
 import android.app.NotificationManager;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -44,6 +46,9 @@ public class UploadService extends IntentService {
 		return filePathUri.getLastPathSegment().toString();
 	}
 	
+	/*
+	 * Get the file path from the uri
+	 */
 	private String filePathFromUri(Uri uri) {
 		String[] projection = { MediaStore.Images.Media.DATA };
 		Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
@@ -106,11 +111,10 @@ public class UploadService extends IntentService {
 //			}
 //		});
 
-		//// Using FileEntity worked !!!
 		String filePath = this.filePathFromUri(uri);
 		File fileToUpload = new File(filePath);
 		
-		final FileEntityWithProgressBar entity = new FileEntityWithProgressBar(fileToUpload, "binary/octet-stream");
+		FileEntityWithProgressBar entity = new FileEntityWithProgressBar(fileToUpload, "binary/octet-stream");
 		entity.setUploadListener(new ProgressBarListener() {
 			@Override
 			public void updateTransferred(int percent) {
@@ -125,24 +129,31 @@ public class UploadService extends IntentService {
 
 		if (webdavUser != null && webdavPassword != null) {
 			AuthScope authScope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT);
-			String username = "";
-			String domain = "";
+			
+			/*
+			 *  We're assuming if the webdavUser is in the format domain\\username
+			 *  The user is trying to authenticate with NTLM
+			 *  
+			 *  This is what I needed in order for it to work with SharePoint 2010
+			 */
 			if (webdavUser.contains("\\"))
 			{
-				domain = webdavUser.split("\\\\")[0];
-				username = webdavUser.split("\\\\")[1];
+				String domain = webdavUser.split("\\\\")[0];
+				String username = webdavUser.split("\\\\")[1];
+				NTLM.setNTLM(httpClient, username, webdavPassword, domain);
 			}
-			NTLM.setNTLM(httpClient, username, webdavPassword, domain);
-			//NTCredentials credentials = new NTCredentials(username, webdavPassword, "", domain);
-			//UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(webdavUser, webdavPassword);
-			//httpClient.getCredentialsProvider().setCredentials(authScope, credentials);
+			else
+			{
+				UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(webdavUser, webdavPassword);
+				httpClient.getCredentialsProvider().setCredentials(authScope, credentials);
 
-//			try {
-//				httpPut.addHeader(new BasicScheme().authenticate(credentials, httpPut));
-//			} catch (AuthenticationException e1) {
-//				e1.printStackTrace();
-//				return;
-//			}
+				try {
+					httpPut.addHeader(new BasicScheme().authenticate(credentials, httpPut));
+				} catch (AuthenticationException e1) {
+					e1.printStackTrace();
+					return;
+				}
+			}
 		}
 
 		try {
