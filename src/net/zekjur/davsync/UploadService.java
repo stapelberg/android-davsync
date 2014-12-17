@@ -1,10 +1,9 @@
 package net.zekjur.davsync;
 
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 
-import net.zekjur.davsync.CountingInputStreamEntity.UploadListener;
+import net.maxters.android.ntlm.NTLM;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
@@ -17,13 +16,11 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.app.IntentService;
 import android.app.NotificationManager;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.app.Notification;
 import android.app.Notification.Builder;
@@ -48,6 +45,20 @@ public class UploadService extends IntentService {
 		Uri filePathUri = Uri.parse(cursor.getString(column_index));
 		return filePathUri.getLastPathSegment().toString();
 	}
+	
+	/*
+	 * Get the file path from the uri
+	 */
+	private String filePathFromUri(Uri uri) {
+		String[] projection = { MediaStore.Images.Media.DATA };
+		Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+		if (cursor == null || cursor.getCount() == 0)
+			return null;
+		int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+		cursor.moveToFirst();
+		Uri filePathUri = Uri.parse(cursor.getString(column_index));
+		return filePathUri.toString();
+	}
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
@@ -63,8 +74,6 @@ public class UploadService extends IntentService {
 			Log.d("davsyncs", "No WebDAV URL set up.");
 			return;
 		}
-
-		ContentResolver cr = getContentResolver();
 
 		String filename = this.filenameFromUri(uri);
 		if (filename == null) {
@@ -83,39 +92,67 @@ public class UploadService extends IntentService {
 
 		HttpPut httpPut = new HttpPut(webdavUrl + filename);
 
-		ParcelFileDescriptor fd;
-		InputStream stream;
-		try {
-			fd = cr.openFileDescriptor(uri, "r");
-			stream = cr.openInputStream(uri);
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-			return;
-		}
+//		ParcelFileDescriptor fd;
+//		InputStream stream;
+//		try {
+//			fd = cr.openFileDescriptor(uri, "r");
+//			stream = cr.openInputStream(uri);
+//		} catch (FileNotFoundException e1) {
+//			e1.printStackTrace();
+//			return;
+//		}
+//				
+//		CountingInputStreamEntity entity = new CountingInputStreamEntity(stream, fd.getStatSize());
+//		entity.setUploadListener(new UploadListener() {
+//			@Override
+//			public void onChange(int percent) {
+//				mBuilder.setProgress(100, percent, false);
+//				mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
+//			}
+//		});
 
-		CountingInputStreamEntity entity = new CountingInputStreamEntity(stream, fd.getStatSize());
-		entity.setUploadListener(new UploadListener() {
+		String filePath = this.filePathFromUri(uri);
+		File fileToUpload = new File(filePath);
+		
+		FileEntityWithProgressBar entity = new FileEntityWithProgressBar(fileToUpload, "binary/octet-stream");
+		entity.setUploadListener(new ProgressBarListener() {
 			@Override
-			public void onChange(int percent) {
+			public void updateTransferred(int percent) {
 				mBuilder.setProgress(100, percent, false);
 				mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
 			}
 		});
-
+		
 		httpPut.setEntity(entity);
 
 		DefaultHttpClient httpClient = new DefaultHttpClient();
 
 		if (webdavUser != null && webdavPassword != null) {
 			AuthScope authScope = new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT);
-			UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(webdavUser, webdavPassword);
-			httpClient.getCredentialsProvider().setCredentials(authScope, credentials);
+			
+			/*
+			 *  We're assuming if the webdavUser is in the format domain\\username
+			 *  The user is trying to authenticate with NTLM
+			 *  
+			 *  This is what I needed in order for it to work with SharePoint 2010
+			 */
+			if (webdavUser.contains("\\"))
+			{
+				String domain = webdavUser.split("\\\\")[0];
+				String username = webdavUser.split("\\\\")[1];
+				NTLM.setNTLM(httpClient, username, webdavPassword, domain);
+			}
+			else
+			{
+				UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(webdavUser, webdavPassword);
+				httpClient.getCredentialsProvider().setCredentials(authScope, credentials);
 
-			try {
-				httpPut.addHeader(new BasicScheme().authenticate(credentials, httpPut));
-			} catch (AuthenticationException e1) {
-				e1.printStackTrace();
-				return;
+				try {
+					httpPut.addHeader(new BasicScheme().authenticate(credentials, httpPut));
+				} catch (AuthenticationException e1) {
+					e1.printStackTrace();
+					return;
+				}
 			}
 		}
 
