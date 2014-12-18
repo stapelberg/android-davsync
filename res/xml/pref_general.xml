@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
-    <EditTextPreference android:title="WebDAV URL" android:key="webdav_url" android:inputType="textUri" />
-    <EditTextPreference android:title="WebDAV Username" android:key="webdav_user" android:inputType="textNoSuggestions"/>
-    <EditTextPreference android:title="WebDAV password" android:key="webdav_password" android:inputType="textWebPassword"/>
-    
-
-</PreferenceScreen>

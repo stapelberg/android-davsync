@@ -1,25 +1,16 @@
 package net.zekjur.davsync;
 
-import java.util.List;
-
-import android.annotation.TargetApi;
-import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
+import android.preference.ListPreference;
+import android.preference.MultiSelectListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceCategory;
-import android.preference.PreferenceFragment;
+import android.preference.PreferenceGroup;
+import android.preference.PreferenceManager;
 
-// XXX: I am aware of the fact that the EditTextPreferences don’t display a
-// meaningful summary. This seems to be possible, see
-// http://stackoverflow.com/questions/531427/how-do-i-display-the-current-value-of-an-android-preference-in-the-preference-su
-// However, I think it is overly complicated and I’m not motivated to test
-// this app on a tablet. Patches welcome.
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -32,136 +23,70 @@ import android.preference.PreferenceFragment;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
+@SuppressWarnings("deprecation")
 public class SettingsActivity extends PreferenceActivity implements OnSharedPreferenceChangeListener {
-	/**
-	 * Determines whether to always show the simplified settings UI, where
-	 * settings are presented in a single list. When false, settings are shown
-	 * as a master/detail two-pane view on tablets. When true, a single pane is
-	 * shown on tablets.
-	 */
-	private static final boolean ALWAYS_SIMPLE_PREFS = false;
 	
-	private EditTextPreference webdavUrlPreference;
-	private EditTextPreference webdavUserPreference;
-	private EditTextPreference webdavPwdPreference;
-
 	@Override
-	protected void onPostCreate(Bundle savedInstanceState) {
-		super.onPostCreate(savedInstanceState);
-
-		setupSimplePreferencesScreen();
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		addPreferencesFromResource(R.xml.pref_settings);
 		
-		webdavUrlPreference = (EditTextPreference) getPreferenceScreen().findPreference("webdav_url");
-		webdavUserPreference = (EditTextPreference) getPreferenceScreen().findPreference("webdav_user");
-		webdavPwdPreference = (EditTextPreference) getPreferenceScreen().findPreference("webdav_password");
+		PreferenceManager.setDefaultValues(SettingsActivity.this, R.xml.pref_settings,
+	            false);
+        initSummary(getPreferenceScreen());
+	}
+	
+	@Override
+	public void onResume() {
+	    super.onResume();
+	    getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+
 	}
 
 	@Override
-	protected void onPause() {
-		super.onPause();
-		
-		getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+	public void onPause() {
+	    getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+	    super.onPause();
 	}
 
-	@Override
-	protected void onResume() {
-		super.onResume();
-		
-		SharedPreferences sharedPreferences = getPreferenceScreen().getSharedPreferences();
-		webdavUrlPreference.setSummary(sharedPreferences.getString("webdav_url", ""));
-		webdavUserPreference.setSummary(sharedPreferences.getString("webdav_user", ""));
-		if (sharedPreferences.getString("webdav_password", "").equals("")) {
-			webdavPwdPreference.setSummary("");
-		} else {
-			webdavPwdPreference.setSummary("****");
-		}
-		
-		getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);	
-	}
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+            String key) {
+        updatePrefSummary(findPreference(key));
+    }
 
-	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-		if (key.equals("webdav_url")) {
-			webdavUrlPreference.setSummary(sharedPreferences.getString("webdav_url", ""));
-		} else if (key.equals("webdav_user")) {
-			webdavUserPreference.setSummary(sharedPreferences.getString("webdav_user", ""));
-		}
-		else if (key.equals("webdav_password")) {
-			if (sharedPreferences.getString("webdav_password", "").equals("")) {
-				webdavPwdPreference.setSummary("");
-			} else {
-				webdavPwdPreference.setSummary("****");
-			}
-		}
-	}
+    private void initSummary(Preference p) {
+        if (p instanceof PreferenceGroup) {
+            PreferenceGroup pGrp = (PreferenceGroup) p;
+            for (int i = 0; i < pGrp.getPreferenceCount(); i++) {
+                initSummary(pGrp.getPreference(i));
+            }
+        } else {
+            updatePrefSummary(p);
+        }
+    }
 
-	/**
-	 * Shows the simplified settings UI if the device configuration if the
-	 * device configuration dictates that a simplified, single-pane UI should be
-	 * shown.
-	 */
-	@SuppressWarnings("deprecation")
-	private void setupSimplePreferencesScreen() {
-		if (!isSimplePreferences(this)) {
-			return;
-		}
-
-		// In the simplified UI, fragments are not used at all and we instead
-		// use the older PreferenceActivity APIs.
-
-		addPreferencesFromResource(R.xml.pref_general);
-		// Add 'data and sync' preferences, and a corresponding header.
-		PreferenceCategory fakeHeader = new PreferenceCategory(this);
-		fakeHeader.setTitle(R.string.pref_header_autosync);
-		getPreferenceScreen().addPreference(fakeHeader);
-		addPreferencesFromResource(R.xml.pref_autosync);
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	public boolean onIsMultiPane() {
-		return isXLargeTablet(this) && !isSimplePreferences(this);
-	}
-
-	/**
-	 * Helper method to determine if the device has an extra-large screen. For
-	 * example, 10" tablets are extra-large.
-	 */
-	private static boolean isXLargeTablet(Context context) {
-		return (context.getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_XLARGE;
-	}
-
-	/**
-	 * Determines whether the simplified settings UI should be shown. This is
-	 * true if this is forced via {@link #ALWAYS_SIMPLE_PREFS}, or the device
-	 * doesn't have newer APIs like {@link PreferenceFragment}, or the device
-	 * doesn't have an extra-large screen. In these cases, a single-pane
-	 * "simplified" settings UI should be shown.
-	 */
-	private static boolean isSimplePreferences(Context context) {
-		return ALWAYS_SIMPLE_PREFS || Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB || !isXLargeTablet(context);
-	}
-
-	/** {@inheritDoc} */
-	@Override
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	public void onBuildHeaders(List<Header> target) {
-		if (!isSimplePreferences(this)) {
-			loadHeadersFromResource(R.xml.pref_headers, target);
-		}
-	}
-
-	/**
-	 * This fragment shows notification preferences only. It is used when the
-	 * activity is showing a two-pane settings UI.
-	 */
-	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
-	public static class AutoSyncPreferenceFragment extends PreferenceFragment {
-		@Override
-		public void onCreate(Bundle savedInstanceState) {
-			super.onCreate(savedInstanceState);
-			addPreferencesFromResource(R.xml.pref_autosync);
-		}
-	}
-
+    private void updatePrefSummary(Preference p) {
+    	if (p instanceof ListPreference) {
+            ListPreference listPref = (ListPreference) p;
+            p.setSummary(listPref.getEntry());
+        }
+        if (p instanceof EditTextPreference) {
+            EditTextPreference editTextPref = (EditTextPreference) p;
+            if (p.getTitle().toString().contains("assword") && !editTextPref.getText().equals(""))
+            {
+                p.setSummary("*****");
+            }
+            else if (p.getTitle().toString().contains("assword") && editTextPref.getText().equals(""))
+            {
+            	p.setSummary("");
+        	} 
+            else {
+                p.setSummary(editTextPref.getText());
+            }
+        }
+        if (p instanceof MultiSelectListPreference) {
+            EditTextPreference editTextPref = (EditTextPreference) p;
+            p.setSummary(editTextPref.getText());
+        }
+    }
 }
