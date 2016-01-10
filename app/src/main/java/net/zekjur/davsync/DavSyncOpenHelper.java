@@ -19,7 +19,7 @@ public class DavSyncOpenHelper extends SQLiteOpenHelper {
 
 	@Override
 	public void onCreate(SQLiteDatabase db) {
-		db.execSQL("CREATE TABLE IF NOT EXISTS sync_queue (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, uri STRING NOT NULL, not_before DATETIME, uploading BOOLEAN DEFAULT 0);");
+		db.execSQL("CREATE TABLE IF NOT EXISTS sync_queue (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, uri STRING NOT NULL);");
 	}
 
 	@Override
@@ -36,7 +36,7 @@ public class DavSyncOpenHelper extends SQLiteOpenHelper {
 		SQLiteDatabase database = getWritableDatabase();
 		database.beginTransaction();
 		try {
-			Cursor cursor = database.rawQuery("SELECT uri FROM sync_queue WHERE NOT uploading", null);
+			Cursor cursor = database.rawQuery("SELECT uri FROM sync_queue", null);
 			if (cursor.moveToFirst()) {
 				do {
 					result.add(cursor.getString(0));
@@ -46,7 +46,7 @@ public class DavSyncOpenHelper extends SQLiteOpenHelper {
 			if (cursor != null && !cursor.isClosed())
 				cursor.close();
 
-			database.execSQL("UPDATE sync_queue SET uploading = 1");
+			database.execSQL("DELETE FROM sync_queue");
 
 			database.setTransactionSuccessful();
 		} finally {
@@ -62,8 +62,4 @@ public class DavSyncOpenHelper extends SQLiteOpenHelper {
 		database.insertOrThrow("sync_queue", null, values);
 	}
 
-	public void removeUriFromQueue(String uri) {
-		SQLiteDatabase database = getWritableDatabase();
-		database.delete("sync_queue", "uri = ?", new String[] { uri });
-	}
 }
