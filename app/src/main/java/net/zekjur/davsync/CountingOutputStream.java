@@ -3,9 +3,6 @@ package net.zekjur.davsync;
 import java.io.IOException;
 import java.io.OutputStream;
 
-/**
- * Created by santi on 6/01/16.
- */
 class CountingOutputStream extends OutputStream {
 
 	private UploadListener listener;
