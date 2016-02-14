@@ -20,10 +20,60 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 public class UploadService extends IntentService {
+
+	private static class ProgressNotification {
+
+		private static int NOTIFICATION_ID = 1;
+
+		private Builder mBuilder;
+		private NotificationManager mNotificationManager;
+
+		public ProgressNotification(Context context, String filename) {
+
+			mBuilder = new Notification.Builder(context);
+			mNotificationManager = (NotificationManager) context
+					.getSystemService(Context.NOTIFICATION_SERVICE);
+
+			mBuilder.setContentTitle("Uploading to WebDAV server");
+			mBuilder.setContentText(filename);
+			mBuilder.setSmallIcon(android.R.drawable.ic_menu_upload);
+			mBuilder.setOngoing(true);
+			mBuilder.setProgress(100, 0, false);
+		}
+
+		@SuppressWarnings("deprecation")
+		public void show() {
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+				mNotificationManager.notify(NOTIFICATION_ID, mBuilder.getNotification());
+			}
+			else {
+				mNotificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+			}
+		}
+
+		public void notifyError(String message) {
+			mBuilder.setContentTitle("Error uploading to WebDAV server.");
+			mBuilder.setContentText(message);
+			mBuilder.setProgress(0, 0, false);
+			mBuilder.setOngoing(false);
+			mBuilder.setAutoCancel(true);
+
+			show();
+		}
+
+		public void cancel() {
+			mNotificationManager.cancel(NOTIFICATION_ID);
+		}
+
+		public void setProgress(int percent) {
+			mBuilder.setProgress(100, percent, false);
+			show();
+		}
+	}
+
 	public UploadService() {
 		super("UploadService");
 	}
@@ -40,12 +90,19 @@ public class UploadService extends IntentService {
 		int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
 		cursor.moveToFirst();
 		Uri filePathUri = Uri.parse(cursor.getString(column_index));
-		return filePathUri.getLastPathSegment().toString();
+		cursor.close();
+		return filePathUri.getLastPathSegment();
+	}
+
+	private void requeueingUri(Uri uri) {
+		Log.d("davsync", "Queueing " + uri + "for later (Upload error)");
+		DavSyncOpenHelper helper = new DavSyncOpenHelper(this);
+		helper.queueUri(uri);
 	}
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		final Uri uri = (Uri) intent.getParcelableExtra(Intent.EXTRA_STREAM);
+		final Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
 		Log.d("davsyncs", "Uploading " + uri.toString());
 
 		SharedPreferences preferences = getSharedPreferences("net.zekjur.davsync_preferences", Context.MODE_PRIVATE);
@@ -66,19 +123,8 @@ public class UploadService extends IntentService {
 			return;
 		}
 
-		final Builder mBuilder = new Notification.Builder(this);
-		mBuilder.setContentTitle("Uploading to WebDAV server");
-		mBuilder.setContentText(filename);
-		mBuilder.setSmallIcon(android.R.drawable.ic_menu_upload);
-		mBuilder.setOngoing(true);
-		mBuilder.setProgress(100, 30, false);
-		final NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-			mNotificationManager.notify(uri.toString(), 0, mBuilder.getNotification());
-		}
-		else {
-			mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
-		}
+		final ProgressNotification progressNotification = new ProgressNotification(this, filename);
+		progressNotification.show();
 
 		try {
 
@@ -103,28 +149,36 @@ public class UploadService extends IntentService {
 
 				@Override
 				public void onChange(int percent) {
-					mBuilder.setProgress(100, percent, false);
-					if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-						mNotificationManager.notify(uri.toString(), 0, mBuilder.getNotification());
-					}
-					else {
-						mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
-					}
+					progressNotification.setProgress(percent);
 				}
 			};
 
 			ParcelFileDescriptor fd;
 			InputStream stream;
+			long fileSize;
 			try {
 				fd = cr.openFileDescriptor(uri, "r");
+				assert fd != null; // to avoid Android Studio warning
 				stream = cr.openInputStream(uri);
+				assert stream != null; // to avoid Android Studio warning
+				fileSize = fd.getStatSize();
 			} catch (FileNotFoundException e1) {
-				e1.printStackTrace();
+				Log.d("davsyncs", "File not found", e1);
 				return;
 			}
 
+			String strMaxFileSize = preferences.getString("auto_sync_max_filesize", null);
+			int maxFileSize = strMaxFileSize != null ? Integer.parseInt(strMaxFileSize)
+					: Integer.MAX_VALUE;
+			if (fileSize >= maxFileSize * 1048576) {
+				progressNotification.notifyError("File is too large");
+				return;
+			}
+
+			httpURLConnection.setFixedLengthStreamingMode((int)fileSize);
+
 			CountingOutputStream output = new CountingOutputStream(
-					httpURLConnection.getOutputStream(), listener, fd.getStatSize());
+					httpURLConnection.getOutputStream(), listener, fileSize);
 
 			byte buffer [] = new byte [8192];
 			int len;
@@ -139,35 +193,19 @@ public class UploadService extends IntentService {
 					|| responseCode == HttpURLConnection.HTTP_OK
 					|| responseCode == HttpURLConnection.HTTP_NO_CONTENT) {
 
-				mNotificationManager.cancel(uri.toString(), 0);
+				progressNotification.cancel();
 				return;
 			}
 
 			Log.d("davsyncs", "" + httpURLConnection.getResponseMessage());
-			mBuilder.setContentText(filename + ": " + httpURLConnection.getResponseMessage());
+			progressNotification.notifyError(filename + ": " + httpURLConnection.getResponseMessage());
 
-		} catch (MalformedURLException e) {
-			Log.d("davsyncs", "Error uploading to WebDAV server", e);
-			mBuilder.setContentText(filename + ": " + e.getLocalizedMessage());
 		} catch (IOException e) {
 			Log.d("davsyncs", "Error uploading to WebDAV server", e);
-			mBuilder.setContentText(filename + ": " + e.getLocalizedMessage());
+			progressNotification.notifyError(filename + ": " + e.getLocalizedMessage());
 		}
 
-		Log.d("davsync", "Queueing " + uri + "for later (Upload error)");
-		DavSyncOpenHelper helper = new DavSyncOpenHelper(this);
-		helper.queueUri(uri);
-
-		mBuilder.setContentTitle("Error uploading to WebDAV server");
-		mBuilder.setProgress(0, 0, false);
-		mBuilder.setOngoing(false);
-
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
-			mNotificationManager.notify(uri.toString(), 0, mBuilder.getNotification());
-		}
-		else {
-			mNotificationManager.notify(uri.toString(), 0, mBuilder.build());
-		}
+		requeueingUri(uri);
 
 	}
 }
