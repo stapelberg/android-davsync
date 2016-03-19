@@ -12,5 +12,12 @@
         android:defaultValue="true"
         android:key="auto_sync_on_wifi_only"
         android:title="@string/pref_title_auto_sync_on_wifi_only" />
+    <EditTextPreference
+        android:numeric="integer"
+        android:defaultValue="0"
+        android:key="auto_sync_max_filesize"
+        android:title="@string/pref_title_max_filesize"
+        />
+
 
 </PreferenceScreen>

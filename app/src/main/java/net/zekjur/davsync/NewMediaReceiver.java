@@ -41,12 +41,11 @@ public class NewMediaReceiver extends BroadcastReceiver {
 
 		ConnectivityManager cs = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo info = cs.getActiveNetworkInfo();
-		if (info == null) {
-			return;
-		}
 
 		// If we have WIFI connectivity, upload immediately
-		boolean isWifi = info.isConnected() && (ConnectivityManager.TYPE_WIFI == info.getType());
+		boolean isWifi = info != null && info.isConnected()
+				&& (ConnectivityManager.TYPE_WIFI == info.getType());
+
 		if (!syncOnWifiOnly || isWifi) {
 			Log.d("davsync", "Trying to upload " + uri + " immediately (on WIFI)");
 			Intent ulIntent = new Intent(context, UploadService.class);
